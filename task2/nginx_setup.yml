@@ -189,6 +189,14 @@
         - /var/log/nginx/access.log
         - /var/log/nginx/error.log
 
+    - name: Ensure permissions for td-agent log directory
+      file:
+        path: /var/log/td-agent
+        state: directory
+        owner: td-agent
+        group: td-agent
+        mode: '0755'
+
   handlers:
     - name: Restart Nginx
       systemd:
