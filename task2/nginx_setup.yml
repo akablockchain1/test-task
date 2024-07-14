@@ -123,7 +123,16 @@
         state: started
         enabled: true
 
-    - name: Configure Fluentd to collect Nginx logs
+    - name: Create denylist file
+      copy:
+        content: |
+          108.61.172.255
+        dest: /etc/td-agent/denylist.txt
+        owner: td-agent
+        group: td-agent
+        mode: '0644'
+
+    - name: Configure Fluentd to collect and filter Nginx logs
       copy:
         content: |
           <source>
@@ -144,6 +153,21 @@
               @type none
             </parse>
           </source>
+          <filter nginx.access>
+            @type grep
+            <exclude>
+              key remote
+              pattern_file /etc/td-agent/denylist.txt
+            </exclude>
+          </filter>
+          <filter nginx.access>
+            @type grep
+            <include>
+              key remote
+              pattern_file /etc/td-agent/denylist.txt
+            </include>
+            @label @DENYLIST
+          </filter>
           <match nginx.access>
             @type file
             path /var/log/td-agent/nginx-access.log
@@ -152,6 +176,12 @@
             @type file
             path /var/log/td-agent/nginx-error.log
           </match>
+          <label @DENYLIST>
+            <match nginx.access>
+              @type file
+              path /var/log/td-agent/denylist_audit.log
+            </match>
+          </label>
         dest: /etc/td-agent/td-agent.conf
         owner: root
         group: root
@@ -169,6 +199,7 @@
       loop:
         - /var/log/td-agent/nginx-access.log
         - /var/log/td-agent/nginx-error.log
+        - /var/log/td-agent/denylist_audit.log
 
     - name: Ensure permissions for Nginx log directory
       file:
