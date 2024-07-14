@@ -101,6 +101,17 @@
     - name: Enable UFW
       command: ufw --force enable
 
+    - name: Add Fluentd GPG key
+      apt_key:
+        url: https://packages.treasuredata.com/GPG-KEY-td-agent
+        state: present
+
+    - name: Add Fluentd repository
+      apt_repository:
+        repo: deb http://packages.treasuredata.com/4/ubuntu/focal focal contrib
+        state: present
+        update_cache: yes
+
     - name: Install Fluentd
       apt:
         name: td-agent
