@@ -145,10 +145,12 @@
             </parse>
           </source>
           <match nginx.access>
-            @type stdout
+            @type file
+            path /var/log/td-agent/nginx-access.log
           </match>
           <match nginx.error>
-            @type stdout
+            @type file
+            path /var/log/td-agent/nginx-error.log
           </match>
         dest: /etc/td-agent/td-agent.conf
         owner: root
@@ -156,6 +158,17 @@
         mode: '0644'
       notify:
         - Restart Fluentd
+
+    - name: Set permissions for Fluentd and Nginx log directories
+      file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - { path: '/var/log/td-agent', owner: 'td-agent', group: 'td-agent', mode: '0755' }
+        - { path: '/var/log/nginx', owner: 'www-data', group: 'www-data', mode: '0755' }
 
   handlers:
     - name: Restart Nginx
