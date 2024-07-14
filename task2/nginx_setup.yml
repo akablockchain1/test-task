@@ -157,14 +157,14 @@
             @type grep
             <exclude>
               key remote
-              pattern_file /etc/td-agent/denylist.txt
+              pattern /^108\.61\.172\.255$/
             </exclude>
           </filter>
           <filter nginx.access>
             @type grep
             <include>
               key remote
-              pattern_file /etc/td-agent/denylist.txt
+              pattern /^108\.61\.172\.255$/
             </include>
             @label @DENYLIST
           </filter>
