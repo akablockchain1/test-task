@@ -2,3 +2,4 @@
 task1/.terraform
 task1/terraform.tfstate
 task1/.terraform.lock.hcl
+/task1/terraform.tfstate.backup
