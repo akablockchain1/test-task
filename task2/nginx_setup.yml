@@ -123,15 +123,6 @@
         state: started
         enabled: true
 
-    - name: Create denylist file
-      copy:
-        content: |
-          108.61.172.255
-        dest: /etc/td-agent/denylist.txt
-        owner: td-agent
-        group: td-agent
-        mode: '0644'
-
     - name: Configure Fluentd to collect and filter Nginx logs
       copy:
         content: |
@@ -154,23 +145,17 @@
             </parse>
           </source>
           <filter nginx.access>
-            @type record_transformer
-            <record>
-              denylist_ip ${if File.readlines('/etc/td-agent/denylist.txt').include?(record["remote"] + "\n") then 'true' else 'false' end}
-            </record>
-          </filter>
-          <filter nginx.access>
             @type grep
             <exclude>
-              key denylist_ip
-              pattern true
+              key remote
+              pattern /^108\.61\.172\.255$/
             </exclude>
           </filter>
           <filter nginx.access>
             @type grep
             <include>
-              key denylist_ip
-              pattern true
+              key remote
+              pattern /^108\.61\.172\.255$/
             </include>
             @label @DENYLIST
           </filter>
