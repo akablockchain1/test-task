@@ -1,0 +1,21 @@
+---
+- name: Ensure Nginx is installed and running
+  hosts: webservers
+  become: true
+  tasks:
+    - name: Update apt repository cache and upgrade packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+        cache_valid_time: 3600
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Start and enable Nginx service
+      systemd:
+        name: nginx
+        state: started
+        enabled: true
