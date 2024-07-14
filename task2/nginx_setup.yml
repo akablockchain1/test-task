@@ -1,5 +1,5 @@
 ---
-- name: Ensure Nginx is installed and running
+- name: Ensure Nginx is installed and configured to serve a "Hello, World!" page
   hosts: webservers
   become: true
   vars:
@@ -20,4 +20,59 @@
       systemd:
         name: nginx
         state: started
+        enabled: true
+
+    - name: Create directory for the website
+      file:
+        path: /var/www/html
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Create an index.html file with "Hello, World!" content
+      copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Hello, World!</title>
+          </head>
+          <body>
+              <h1>Hello, World!</h1>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Configure Nginx to serve the custom index.html
+      copy:
+        content: |
+          server {
+              listen 80 default_server;
+              listen [::]:80 default_server;
+
+              root /var/www/html;
+              index index.html;
+
+              server_name _;
+
+              location / {
+                  try_files $uri $uri/ =404;
+              }
+          }
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        group: root
+        mode: '0644'
+      notify:
+        - Restart Nginx
+
+  handlers:
+    - name: Restart Nginx
+      systemd:
+        name: nginx
+        state: restarted
         enabled: true
