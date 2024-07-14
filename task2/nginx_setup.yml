@@ -154,17 +154,23 @@
             </parse>
           </source>
           <filter nginx.access>
+            @type record_transformer
+            <record>
+              denylist_ip ${if File.readlines('/etc/td-agent/denylist.txt').include?(record["remote"] + "\n") then 'true' else 'false' end}
+            </record>
+          </filter>
+          <filter nginx.access>
             @type grep
             <exclude>
-              key remote
-              pattern /^108\.61\.172\.255$/
+              key denylist_ip
+              pattern true
             </exclude>
           </filter>
           <filter nginx.access>
             @type grep
             <include>
-              key remote
-              pattern /^108\.61\.172\.255$/
+              key denylist_ip
+              pattern true
             </include>
             @label @DENYLIST
           </filter>
