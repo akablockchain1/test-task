@@ -81,6 +81,7 @@
         - postgresql
         - cups
         - rpcbind
+      ignore_errors: yes
 
     - name: Install UFW
       apt:
