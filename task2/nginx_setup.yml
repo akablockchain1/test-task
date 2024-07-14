@@ -2,6 +2,8 @@
 - name: Ensure Nginx is installed and running
   hosts: webservers
   become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
   tasks:
     - name: Update apt repository cache and upgrade packages
       apt:
