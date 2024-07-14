@@ -159,16 +159,35 @@
       notify:
         - Restart Fluentd
 
-    - name: Set permissions for Fluentd and Nginx log directories
+    - name: Ensure log files exist and have correct permissions
       file:
-        path: "{{ item.path }}"
-        state: directory
-        owner: "{{ item.owner }}"
-        group: "{{ item.group }}"
-        mode: "{{ item.mode }}"
+        path: "{{ item }}"
+        state: touch
+        owner: td-agent
+        group: td-agent
+        mode: '0644'
       loop:
-        - { path: '/var/log/td-agent', owner: 'td-agent', group: 'td-agent', mode: '0755' }
-        - { path: '/var/log/nginx', owner: 'www-data', group: 'www-data', mode: '0755' }
+        - /var/log/td-agent/nginx-access.log
+        - /var/log/td-agent/nginx-error.log
+
+    - name: Ensure permissions for Nginx log directory
+      file:
+        path: /var/log/nginx
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Ensure permissions for Nginx log files
+      file:
+        path: "{{ item }}"
+        state: file
+        owner: td-agent
+        group: td-agent
+        mode: '0644'
+      loop:
+        - /var/log/nginx/access.log
+        - /var/log/nginx/error.log
 
   handlers:
     - name: Restart Nginx
