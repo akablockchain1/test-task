@@ -1,5 +1,5 @@
 ---
-- name: Ensure Nginx and Fluentd are installed and configured
+- name: Setup Nginx, Fluentd, and log rotation
   hosts: webservers
   become: true
   vars:
@@ -218,6 +218,32 @@
         owner: td-agent
         group: td-agent
         mode: '0755'
+
+    - name: Ensure logrotate is installed
+      apt:
+        name: logrotate
+        state: present
+
+    - name: Create logrotate configuration for Fluentd logs
+      copy:
+        dest: /etc/logrotate.d/td-agent
+        content: |
+          /var/log/td-agent/*.log {
+              daily
+              rotate 5
+              compress
+              delaycompress
+              missingok
+              notifempty
+              create 0640 td-agent td-agent
+              sharedscripts
+              postrotate
+                  systemctl reload td-agent > /dev/null 2>/dev/null || true
+              endscript
+          }
+
+    - name: Force logrotate to apply new configuration
+      command: logrotate -f /etc/logrotate.d/td-agent
 
   handlers:
     - name: Restart Nginx
