@@ -1,32 +1,44 @@
-FROM ubuntu:latest
+# Базовый образ
+FROM ubuntu:20.04
 
-# Update the package repository and install necessary dependencies
+# Установка необходимых инструментов и настройка часового пояса
 RUN apt-get update && \
-    apt-get install -y wget gnupg2 lsb-release
+    DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata && \
+    ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
+    dpkg-reconfigure --frontend noninteractive tzdata
 
-# Add PostgreSQL APT repository
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
+# Установка необходимых инструментов
+RUN apt-get update && apt-get install -y wget gnupg lsb-release
 
-# Import the repository signing key
+# Добавление ключа репозитория PostgreSQL
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
-# Update package lists
-RUN apt-get update
+# Добавление репозитория PostgreSQL
+RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 
-# Install PostgreSQL 13.15
-RUN apt-get install -y postgresql-13
+# Обновление списков пакетов и установка PostgreSQL 13
+RUN apt-get update && apt-get install -y postgresql-13
 
-# Create a new PostgreSQL user and database
+# Установка переменных окружения для пользователя, пароля и базы данных
+ENV POSTGRES_USER myuser
+ENV POSTGRES_PASSWORD mypassword
+ENV POSTGRES_DB mydatabase
+
+# Создание нового пользователя PostgreSQL и базы данных
 RUN service postgresql start && \
-    su - postgres -c "psql -c \"CREATE USER myuser WITH PASSWORD 'mypassword';\"" && \
-    su - postgres -c "createdb -O myuser mydatabase"
+    su - postgres -c "psql -c \"CREATE USER $POSTGRES_USER WITH PASSWORD '$POSTGRES_PASSWORD';\"" && \
+    su - postgres -c "createdb -O $POSTGRES_USER $POSTGRES_DB"
 
-# Configure PostgreSQL to allow connections from all IP addresses
+# Настройка PostgreSQL для разрешения подключений с любых IP-адресов и локальных подключений с использованием md5
 RUN sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/13/main/postgresql.conf && \
+    sed -i "s/local   all             all                                     peer/local   all             all                                     md5/" /etc/postgresql/13/main/pg_hba.conf && \
     echo "host    all             all             0.0.0.0/0            md5" >> /etc/postgresql/13/main/pg_hba.conf
 
-# Expose the PostgreSQL default port
+# Перезапуск службы PostgreSQL для применения изменений
+RUN service postgresql restart
+
+# Открытие порта PostgreSQL
 EXPOSE 5432
 
-# Start the PostgreSQL service
+# Запуск службы PostgreSQL
 CMD service postgresql start && tail -f /dev/null
