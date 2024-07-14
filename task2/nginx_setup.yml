@@ -99,9 +99,7 @@
         name: 'Nginx HTTP'
 
     - name: Enable UFW
-      ufw:
-        state: enabled
-        enabled: yes
+      command: ufw --force enable
 
   handlers:
     - name: Restart Nginx
