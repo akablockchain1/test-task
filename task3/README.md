@@ -31,7 +31,7 @@ docker build -t my_postgres_image .
 ### Running the Docker Container
 1. **Run the Container**:
 ```bash
-docker run -d --name my_postgres_container -p 5432:5432 my_postgres_image
+docker run -d -e POSTGRES_USER=myuser -e POSTGRES_PASSWORD=mypassword -e POSTGRES_DB=mydatabase --name my_postgres_container -p 5432:5432 my_postgres_image
 ```
 ## Verifying the Functionality
 
