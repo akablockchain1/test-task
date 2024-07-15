@@ -1,44 +1,32 @@
-# Базовый образ
 FROM ubuntu:20.04
 
-# Установка необходимых инструментов и настройка часового пояса
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata && \
     ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
     dpkg-reconfigure --frontend noninteractive tzdata
 
-# Установка необходимых инструментов
 RUN apt-get update && apt-get install -y wget gnupg lsb-release
 
-# Добавление ключа репозитория PostgreSQL
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
-# Добавление репозитория PostgreSQL
 RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 
-# Обновление списков пакетов и установка PostgreSQL 13
 RUN apt-get update && apt-get install -y postgresql-13
 
-# Установка переменных окружения для пользователя, пароля и базы данных
 ENV POSTGRES_USER myuser
 ENV POSTGRES_PASSWORD mypassword
 ENV POSTGRES_DB mydatabase
 
-# Создание нового пользователя PostgreSQL и базы данных
 RUN service postgresql start && \
     su - postgres -c "psql -c \"CREATE USER $POSTGRES_USER WITH PASSWORD '$POSTGRES_PASSWORD';\"" && \
     su - postgres -c "createdb -O $POSTGRES_USER $POSTGRES_DB"
 
-# Настройка PostgreSQL для разрешения подключений с любых IP-адресов и локальных подключений с использованием md5
 RUN sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/13/main/postgresql.conf && \
     sed -i "s/local   all             all                                     peer/local   all             all                                     md5/" /etc/postgresql/13/main/pg_hba.conf && \
     echo "host    all             all             0.0.0.0/0            md5" >> /etc/postgresql/13/main/pg_hba.conf
 
-# Перезапуск службы PostgreSQL для применения изменений
 RUN service postgresql restart
 
-# Открытие порта PostgreSQL
 EXPOSE 5432
 
-# Запуск службы PostgreSQL
 CMD service postgresql start && tail -f /dev/null
